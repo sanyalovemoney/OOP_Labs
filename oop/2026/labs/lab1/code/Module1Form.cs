@@ -34,7 +34,7 @@ namespace Lab1
                 Size = new Size(210, 80)
             };
 
-            string[] groups = { "IM-51", "IM-52", "IM-53", "IM-54", "IM-55", "IM-о51" };
+            string[] groups = { "IM-051", "IM-052", "IM-053", "IM-054", "IM-055", "IM-056" };
             foreach (var group in groups) lbGroups.Items.Add(group);
             if (lbGroups.Items.Count > 0) lbGroups.SelectedIndex = 0;
 
@@ -56,7 +56,7 @@ namespace Lab1
             {
                 if (lbGroups.SelectedItem != null)
                 {
-                    Result = lbGroups.SelectedItem.ToString();
+                    Result = lbGroups.SelectedItem?.ToString() ?? "";
                     this.Close();
                 }
             };

@@ -75,7 +75,7 @@ namespace Lab1
             lblDisplayText.BringToFront();
         }
 
-        private void OnWork1Clicked(object sender, EventArgs e)
+        private void OnWork1Clicked(object? sender, EventArgs e)
         {
             using (var form = new Module1Form())
             {
@@ -86,7 +86,7 @@ namespace Lab1
             }
         }
 
-        private void OnWork2Clicked(object sender, EventArgs e)
+        private void OnWork2Clicked(object? sender, EventArgs e)
         {
             using (var form = new Module2Form())
             {
@@ -97,7 +97,7 @@ namespace Lab1
             }
         }
 
-        private void OnAboutClicked(object sender, EventArgs e)
+        private void OnAboutClicked(object? sender, EventArgs e)
         {
             MessageBox.Show("Лабораторна робота №1\nСтудент: Мащута Олександр", "Про програму", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -143,7 +143,7 @@ namespace Lab1
                 Size = new Size(210, 80)
             };
 
-            string[] groups = { "IM-51", "IM-52", "IM-53", "IM-54", "IM-55", "IM-о51" };
+            string[] groups = { "IM-051", "IM-052", "IM-053", "IM-054", "IM-055", "IM-056" };
             foreach (var group in groups) lbGroups.Items.Add(group);
             if (lbGroups.Items.Count > 0) lbGroups.SelectedIndex = 0;
 
@@ -165,7 +165,7 @@ namespace Lab1
             {
                 if (lbGroups.SelectedItem != null)
                 {
-                    Result = lbGroups.SelectedItem.ToString();
+                    Result = lbGroups.SelectedItem?.ToString() ?? "";
                     this.Close();
                 }
             };

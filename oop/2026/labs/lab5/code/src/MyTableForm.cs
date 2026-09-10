@@ -1,10 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using Lab5.Shapes;
 
 namespace Lab5
 {
+    // Незалежний модуль-таблиця (аналог my_table з методички):
+    // НЕ залежить від класів Shape та MyEditor — приймає дані у вигляді
+    // простих кортежів, тому компонент можна використати в іншому проєкті
+    // без жодних залежностей від редактора.
     public class MyTableForm : Form
     {
         private ListView _listView;
@@ -31,18 +35,20 @@ namespace Lab5
             this.Controls.Add(_listView);
         }
 
-        public void UpdateData()
+        public void UpdateData(IEnumerable<(string Name, int X1, int Y1, int X2, int Y2)> rows)
         {
+            _listView.BeginUpdate();
             _listView.Items.Clear();
-            foreach (var s in MyEditor.Instance.GetShapes())
+            foreach (var (name, x1, y1, x2, y2) in rows)
             {
-                var item = new ListViewItem(s.GetName());
-                item.SubItems.Add(s.X1.ToString());
-                item.SubItems.Add(s.Y1.ToString());
-                item.SubItems.Add(s.X2.ToString());
-                item.SubItems.Add(s.Y2.ToString());
+                var item = new ListViewItem(name);
+                item.SubItems.Add(x1.ToString());
+                item.SubItems.Add(y1.ToString());
+                item.SubItems.Add(x2.ToString());
+                item.SubItems.Add(y2.ToString());
                 _listView.Items.Add(item);
             }
+            _listView.EndUpdate();
         }
     }
 }

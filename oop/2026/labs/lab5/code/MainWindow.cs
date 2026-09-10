@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 using Lab5.Shapes;
 
 namespace Lab5
 {
-    public partial class MainWindow : Form
+    public class MainWindow : Form
     {
         private enum ShapeType { Point, Line, Rectangle, Ellipse, LineCircles, Cube }
         private ShapeType _currentType = ShapeType.Line;
@@ -13,9 +14,9 @@ namespace Lab5
         private Point _currentPoint;
         private bool _isDrawing = false;
 
-        private MenuStrip _menuStrip;
-        private ToolStrip _toolStrip;
-        private MyTableForm _tableForm;
+        private MenuStrip? _menuStrip;
+        private ToolStrip? _toolStrip;
+        private MyTableForm? _tableForm;
 
         public MainWindow()
         {
@@ -32,6 +33,8 @@ namespace Lab5
             _menuStrip = new MenuStrip();
 
             var fileMenu = new ToolStripMenuItem("File");
+            var loadItem = new ToolStripMenuItem("Load", null, OnLoadClicked);
+            fileMenu.DropDownItems.Add(loadItem);
             var saveItem = new ToolStripMenuItem("Save", null, OnSaveClicked);
             fileMenu.DropDownItems.Add(saveItem);
 
@@ -59,26 +62,44 @@ namespace Lab5
         private void InitializeToolbar()
         {
             _toolStrip = new ToolStrip();
-            _toolStrip.Items.Add(new ToolStripButton("Point") { ToolTipText = "Point", Click = (s, e) => { _currentType = ShapeType.Point; UpdateTitle(); } });
-            _toolStrip.Items.Add(new ToolStripButton("Line") { ToolTipText = "Line", Click = (s, e) => { _currentType = ShapeType.Line; UpdateTitle(); } });
-            _toolStrip.Items.Add(new ToolStripButton("Rect") { ToolTipText = "Rectangle", Click = (s, e) => { _currentType = ShapeType.Rectangle; UpdateTitle(); } });
-            _toolStrip.Items.Add(new ToolStripButton("Ellipse") { ToolTipText = "Ellipse", Click = (s, e) => { _currentType = ShapeType.Ellipse; UpdateTitle(); } });
-            _toolStrip.Items.Add(new ToolStripButton("L-Circ") { ToolTipText = "Line with Circles", Click = (s, e) => { _currentType = ShapeType.LineCircles; UpdateTitle(); } });
-            _toolStrip.Items.Add(new ToolStripButton("Cube") { ToolTipText = "Cube Wireframe", Click = (s, e) => { _currentType = ShapeType.Cube; UpdateTitle(); } });
+
+            var btnPoint = new ToolStripButton("Point") { ToolTipText = "Point" };
+            btnPoint.Click += (s, e) => { _currentType = ShapeType.Point; UpdateTitle(); };
+            _toolStrip.Items.Add(btnPoint);
+
+            var btnLine = new ToolStripButton("Line") { ToolTipText = "Line" };
+            btnLine.Click += (s, e) => { _currentType = ShapeType.Line; UpdateTitle(); };
+            _toolStrip.Items.Add(btnLine);
+
+            var btnRect = new ToolStripButton("Rect") { ToolTipText = "Rectangle" };
+            btnRect.Click += (s, e) => { _currentType = ShapeType.Rectangle; UpdateTitle(); };
+            _toolStrip.Items.Add(btnRect);
+
+            var btnEllipse = new ToolStripButton("Ellipse") { ToolTipText = "Ellipse" };
+            btnEllipse.Click += (s, e) => { _currentType = ShapeType.Ellipse; UpdateTitle(); };
+            _toolStrip.Items.Add(btnEllipse);
+
+            var btnLCirc = new ToolStripButton("L-Circ") { ToolTipText = "Line with Circles" };
+            btnLCirc.Click += (s, e) => { _currentType = ShapeType.LineCircles; UpdateTitle(); };
+            _toolStrip.Items.Add(btnLCirc);
+
+            var btnCube = new ToolStripButton("Cube") { ToolTipText = "Cube Wireframe" };
+            btnCube.Click += (s, e) => { _currentType = ShapeType.Cube; UpdateTitle(); };
+            _toolStrip.Items.Add(btnCube);
             this.Controls.Add(_toolStrip);
         }
 
-        private void OnTableClicked(object sender, EventArgs e)
+        private void OnTableClicked(object? sender, EventArgs e)
         {
             if (_tableForm == null || _tableForm.IsDisposed)
             {
                 _tableForm = new MyTableForm();
             }
-            _tableForm.UpdateData();
+            _tableForm.UpdateData(GetTableRows());
             _tableForm.Show();
         }
 
-        private void OnSaveClicked(object sender, EventArgs e)
+        private void OnSaveClicked(object? sender, EventArgs e)
         {
             using (SaveFileDialog sfd = new SaveFileDialog { Filter = "Text files (*.txt)|*.txt" })
             {
@@ -90,7 +111,54 @@ namespace Lab5
             }
         }
 
+        // Бонус методички (п.3): завантаження множини об'єктів з файлу —
+        // об'єкти відображаються і у головному вікні, і у вікні таблиці
+        private void OnLoadClicked(object? sender, EventArgs e)
+        {
+            using (OpenFileDialog ofd = new OpenFileDialog { Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*" })
+            {
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    int count = MyEditor.Instance.LoadFromFile(ofd.FileName);
+                    this.Invalidate();
+                    RefreshTableIfOpen();
+                    MessageBox.Show($"Loaded {count} shapes from file.");
+                }
+            }
+        }
+
+        // Таблиця — незалежний модуль: передаємо їй прості дані, а не Shape-об'єкти
+        private static IEnumerable<(string, int, int, int, int)> GetTableRows()
+        {
+            foreach (var s in MyEditor.Instance.GetShapes())
+            {
+                yield return (s.GetName(), s.X1, s.Y1, s.X2, s.Y2);
+            }
+        }
+
+        // Вимога методички: при кожному додаванні нового об'єкта рядок
+        // автоматично з'являється у вікні таблиці (якщо воно відкрите)
+        private void RefreshTableIfOpen()
+        {
+            if (_tableForm != null && !_tableForm.IsDisposed && _tableForm.Visible)
+            {
+                _tableForm.UpdateData(GetTableRows());
+            }
+        }
+
         private void UpdateTitle() => this.Text = $"Graphic Object Editor - Lab 5 [{_currentType}]";
+
+        // Factory: single place where shapes are created (OCP-friendly)
+        private static Shape CreateShape(ShapeType type, Point start, Point end) => type switch
+        {
+            ShapeType.Point => new PointShape(start.X, start.Y, end.X, end.Y),
+            ShapeType.Line => new LineShape(start.X, start.Y, end.X, end.Y),
+            ShapeType.Rectangle => new RectShape(start.X, start.Y, end.X, end.Y),
+            ShapeType.Ellipse => new EllipseShape(start.X, start.Y, end.X, end.Y),
+            ShapeType.LineCircles => new LineWithCirclesShape(start.X, start.Y, end.X, end.Y),
+            ShapeType.Cube => new CubeWireframeShape(start.X, start.Y, end.X, end.Y),
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
 
         protected override void OnMouseDown(MouseEventArgs e)
         {
@@ -119,17 +187,8 @@ namespace Lab5
             if (_isDrawing && e.Button == MouseButtons.Left)
             {
                 _isDrawing = false;
-                Shape shape = null;
-                switch (_currentType)
-                {
-                    case ShapeType.Point: shape = new PointShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y); break;
-                    case ShapeType.Line: shape = new LineShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y); break;
-                    case ShapeType.Rectangle: shape = new RectShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y); break;
-                    case ShapeType.Ellipse: shape = new EllipseShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y); break;
-                    case ShapeType.LineCircles: shape = new LineWithCirclesShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y); break;
-                    case ShapeType.Cube: shape = new CubeWireframeShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y); break;
-                }
-                if (shape != null) MyEditor.Instance.AddShape(shape);
+                MyEditor.Instance.AddShape(CreateShape(_currentType, _startPoint, e.Location));
+                RefreshTableIfOpen(); // новий рядок автоматично з'являється у таблиці
                 this.Invalidate();
             }
         }
@@ -139,26 +198,20 @@ namespace Lab5
             base.OnPaint(e);
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-            Pen pen = new Pen(Color.Black, 1);
-            Brush brush = Brushes.White;
 
-            MyEditor.Instance.DrawAll(g, pen, brush);
-
-            if (_isDrawing)
+            using (Pen pen = new Pen(Color.Black, 1))
             {
-                Pen rubberPen = new Pen(Color.Gray, 1) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };
-                Brush rubberBrush = new SolidBrush(Color.FromArgb(100, Color.LightGray));
-                Shape rubberShape = null;
-                switch (_currentType)
+                MyEditor.Instance.DrawAll(g, pen);
+
+                if (_isDrawing)
                 {
-                    case ShapeType.Point: rubberShape = new PointShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y); break;
-                    case ShapeType.Line: rubberShape = new LineShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y); break;
-                    case ShapeType.Rectangle: rubberShape = new RectShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y); break;
-                    case ShapeType.Ellipse: rubberShape = new EllipseShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y); break;
-                    case ShapeType.LineCircles: rubberShape = new LineWithCirclesShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y); break;
-                    case ShapeType.Cube: rubberShape = new CubeWireframeShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y); break;
+                    using (Pen rubberPen = new Pen(Color.Gray, 1) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
+                    using (Brush rubberBrush = new SolidBrush(Color.FromArgb(100, Color.LightGray)))
+                    {
+                        Shape rubberShape = CreateShape(_currentType, _startPoint, _currentPoint);
+                        rubberShape.Draw(g, rubberPen, rubberBrush);
+                    }
                 }
-                if (rubberShape != null) rubberShape.Draw(g, rubberPen, rubberBrush);
             }
         }
     }

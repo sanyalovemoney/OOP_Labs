@@ -14,20 +14,23 @@ namespace Lab4
             _shapes.Add(shape);
         }
 
-        public void DrawAll(Graphics g, Pen pen, Brush brush)
+        public void DrawAll(Graphics g, Pen pen)
         {
             foreach (var shape in _shapes)
             {
-                // Applying colors based on type
-                if (shape is RectShape) brush = Brushes.Orange;
-                else if (shape is EllipseShape) brush = Brushes.White;
-                else if (shape is LineWithCirclesShape) brush = Brushes.Yellow;
-                else if (shape is CubeWireframeShape) brush = Brushes.Cyan;
-                else brush = Brushes.LightGray;
-
-                shape.Draw(g, pen, brush);
+                shape.Draw(g, pen, GetFillBrush(shape));
             }
         }
+
+        // Single place where fill colors are defined
+        private static Brush GetFillBrush(Shape shape) => shape switch
+        {
+            RectShape => Brushes.Orange,
+            EllipseShape => Brushes.White,
+            LineWithCirclesShape => Brushes.Yellow,
+            CubeWireframeShape => Brushes.Cyan,
+            _ => Brushes.LightGray
+        };
 
         public void Clear()
         {

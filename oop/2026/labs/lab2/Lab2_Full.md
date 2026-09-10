@@ -19,6 +19,7 @@
 - **Малювання**: Використовуються події миші. Координати фігури визначаються від моменту натискання (X1, Y1) до моменту відпускання кнопки миші (X2, Y2).
 - **Ефект «гумової стрічки»**: Під час руху миші (MouseMove) програма постійно перемальовує тимчасову фігуру, що дозволяє бачити майбутній результат.
 - **Поліморфізм**: Всі створені об'єкти зберігаються у списку `List<Shape>`. При перемальовуванні вікна викликається метод `Draw` для кожного об'єкта, незалежно від його конкретного типу.
+- **Фабрика**: Створення фігур централізоване у статичному методі `CreateShape` (switch-вираз), а кольори заповнення — у `GetFillBrush`. Це усуває дублювання switch-блоків і відповідає принципу OCP.
 
 ---
 
@@ -144,7 +145,7 @@ using Lab2.Shapes;
 
 namespace Lab2
 {
-    public partial class MainWindow : Form
+    public class MainWindow : Form
     {
         private enum ShapeType { Point, Line, Rectangle, Ellipse }
         private ShapeType _currentType = ShapeType.Line;
@@ -154,7 +155,7 @@ namespace Lab2
         private Point _currentPoint;
         private bool _isDrawing = false;
 
-        private MenuStrip _menuStrip;
+        private MenuStrip? _menuStrip;
 
         public MainWindow()
         {
@@ -187,6 +188,24 @@ namespace Lab2
             this.Text = $"Graphic Object Editor - Lab 2 [{_currentType}]";
         }
 
+        // Factory: single place where shapes are created (OCP-friendly)
+        private static Shape CreateShape(ShapeType type, Point start, Point end) => type switch
+        {
+            ShapeType.Point => new PointShape(start.X, start.Y, end.X, end.Y),
+            ShapeType.Line => new LineShape(start.X, start.Y, end.X, end.Y),
+            ShapeType.Rectangle => new RectShape(start.X, start.Y, end.X, end.Y),
+            ShapeType.Ellipse => new EllipseShape(start.X, start.Y, end.X, end.Y),
+            _ => throw new ArgumentOutOfRangeException(nameof(type))
+        };
+
+        // Single place where fill colors are defined
+        private static Brush GetFillBrush(Shape shape) => shape switch
+        {
+            RectShape => Brushes.Orange,
+            EllipseShape => Brushes.White,
+            _ => Brushes.LightGray
+        };
+
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
@@ -214,28 +233,7 @@ namespace Lab2
             if (_isDrawing && e.Button == MouseButtons.Left)
             {
                 _isDrawing = false;
-                Shape shape = null;
-
-                switch (_currentType)
-                {
-                    case ShapeType.Point:
-                        shape = new PointShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y);
-                        break;
-                    case ShapeType.Line:
-                        shape = new LineShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y);
-                        break;
-                    case ShapeType.Rectangle:
-                        shape = new RectShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y);
-                        break;
-                    case ShapeType.Ellipse:
-                        shape = new EllipseShape(_startPoint.X, _startPoint.Y, e.Location.X, e.Location.Y);
-                        break;
-                }
-
-                if (shape != null)
-                {
-                    _shapes.Add(shape);
-                }
+                _shapes.Add(CreateShape(_currentType, _startPoint, e.Location));
                 this.Invalidate();
             }
         }
@@ -246,43 +244,23 @@ namespace Lab2
             Graphics g = e.Graphics;
             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
-            Pen pen = new Pen(Color.Black, 1);
-            Brush brush = Brushes.White;
-
-            foreach (var shape in _shapes)
+            using (Pen pen = new Pen(Color.Black, 1))
             {
-                if (shape is RectShape) brush = Brushes.Orange;
-                else if (shape is EllipseShape) brush = Brushes.White;
-                else brush = Brushes.LightGray;
-
-                shape.Draw(g, pen, brush);
-            }
-
-            if (_isDrawing)
-            {
-                Pen rubberPen = new Pen(Color.Gray, 1) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash };
-                Brush rubberBrush = new SolidBrush(Color.FromArgb(100, Color.LightGray));
-
-                Shape rubberShape = null;
-                switch (_currentType)
+                // Draw all existing shapes
+                foreach (var shape in _shapes)
                 {
-                    case ShapeType.Point:
-                        rubberShape = new PointShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y);
-                        break;
-                    case ShapeType.Line:
-                        rubberShape = new LineShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y);
-                        break;
-                    case ShapeType.Rectangle:
-                        rubberShape = new RectShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y);
-                        break;
-                    case ShapeType.Ellipse:
-                        rubberShape = new EllipseShape(_startPoint.X, _startPoint.Y, _currentPoint.X, _currentPoint.Y);
-                        break;
+                    shape.Draw(g, pen, GetFillBrush(shape));
                 }
 
-                if (rubberShape != null)
+                // Draw rubber-band shape
+                if (_isDrawing)
                 {
-                    rubberShape.Draw(g, rubberPen, rubberBrush);
+                    using (Pen rubberPen = new Pen(Color.Gray, 1) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
+                    using (Brush rubberBrush = new SolidBrush(Color.FromArgb(100, Color.LightGray)))
+                    {
+                        Shape rubberShape = CreateShape(_currentType, _startPoint, _currentPoint);
+                        rubberShape.Draw(g, rubberPen, rubberBrush);
+                    }
                 }
             }
         }

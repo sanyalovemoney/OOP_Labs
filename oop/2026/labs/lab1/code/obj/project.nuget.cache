@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "+xgiCD+w/qs=",
+  "dgSpecHash": "39EXylIfs2w=",
   "success": true,
-  "projectFilePath": "E:\\oop\\labs\\lab1\\code\\Lab1.csproj",
+  "projectFilePath": "E:\\oop\\oop\\2026\\labs\\lab1\\code\\Lab1.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\user\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.27\\microsoft.netcore.app.ref.8.0.27.nupkg.sha512",
     "C:\\Users\\user\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.27\\microsoft.windowsdesktop.app.ref.8.0.27.nupkg.sha512",

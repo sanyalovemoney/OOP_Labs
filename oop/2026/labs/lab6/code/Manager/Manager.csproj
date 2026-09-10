@@ -4,5 +4,10 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Спільна вихідна папка для всіх трьох програм системи
+         (аналог спільної \Debug у одному Solution за методичкою):
+         Manager знаходить Object2.exe/Object3.exe поруч із собою -->
+    <OutputPath>..\bin\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 </Project>

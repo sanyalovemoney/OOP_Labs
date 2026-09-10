@@ -30,53 +30,52 @@ namespace Lab5.Shapes
         public override string GetName() => "Point";
     }
 
-    public class LineShape : Shape
+    // Базові класи реалізують інтерфейси поведінки, тому їхні методи малювання
+    // (default-реалізації інтерфейсів) доступні й складеним фігурам —
+    // аналог виклику Show() базового класу при множинному успадкуванні в C++.
+    public class LineShape : Shape, ILineBehavior
     {
         public LineShape(int x1, int y1, int x2, int y2) : base(x1, y1, x2, y2) { }
-        public override void Draw(Graphics g, Pen pen, Brush brush) => g.DrawLine(pen, X1, Y1, X2, Y2);
+        public override void Draw(Graphics g, Pen pen, Brush brush)
+            => ((ILineBehavior)this).DrawLine(g, pen);
         public override string GetName() => "Line";
     }
 
-    public class RectShape : Shape
+    public class RectShape : Shape, IRectBehavior
     {
         public RectShape(int x1, int y1, int x2, int y2) : base(x1, y1, x2, y2) { }
         public override void Draw(Graphics g, Pen pen, Brush brush)
-        {
-            int x = Math.Min(X1, X2), y = Math.Min(Y1, Y2);
-            int w = Math.Abs(X1 - X2), h = Math.Abs(Y1 - Y2);
-            g.FillRectangle(brush, x, y, w, h);
-            g.DrawRectangle(pen, x, y, w, h);
-        }
+            => ((IRectBehavior)this).DrawRectFilled(g, pen, brush);
         public override string GetName() => "Rectangle";
     }
 
-    public class EllipseShape : Shape
+    public class EllipseShape : Shape, IEllipseBehavior
     {
         public EllipseShape(int x1, int y1, int x2, int y2) : base(x1, y1, x2, y2) { }
         public override void Draw(Graphics g, Pen pen, Brush brush)
-        {
-            int x = Math.Min(X1, X2), y = Math.Min(Y1, Y2);
-            int w = Math.Abs(X1 - X2), h = Math.Abs(Y1 - Y2);
-            g.FillEllipse(brush, x, y, w, h);
-            g.DrawEllipse(pen, x, y, w, h);
-        }
+            => ((IEllipseBehavior)this).DrawEllipseFilled(g, pen, brush);
         public override string GetName() => "Ellipse";
     }
 
-    public class LineWithCirclesShape : Shape
+    // "Множинне успадкування" в C#: Shape + інтерфейси ДВОХ базових поведінок
+    // (еквівалент C++: class LineOOShape : public LineShape, public EllipseShape)
+    public class LineWithCirclesShape : Shape, ILineBehavior, IEllipseBehavior
     {
         public LineWithCirclesShape(int x1, int y1, int x2, int y2) : base(x1, y1, x2, y2) { }
         public override void Draw(Graphics g, Pen pen, Brush brush)
         {
-            g.DrawLine(pen, X1, Y1, X2, Y2);
-            int radius = 3;
-            g.FillEllipse(brush, X1 - radius, Y1 - radius, radius * 2, radius * 2);
-            g.FillEllipse(brush, X2 - radius, Y2 - radius, radius * 2, radius * 2);
+            // Лінія — поведінка LineShape
+            ((ILineBehavior)this).DrawLine(g, pen);
+
+            // Кружечки на кінцях — поведінка EllipseShape
+            ((IEllipseBehavior)this).DrawCircle(g, brush, X1, Y1, 3);
+            ((IEllipseBehavior)this).DrawCircle(g, brush, X2, Y2, 3);
         }
         public override string GetName() => "LineWithCircles";
     }
 
-    public class CubeWireframeShape : Shape
+    // Еквівалент C++: class CubeShape : public LineShape, public RectShape
+    public class CubeWireframeShape : Shape, ILineBehavior, IRectBehavior
     {
         public CubeWireframeShape(int x1, int y1, int x2, int y2) : base(x1, y1, x2, y2) { }
         public override void Draw(Graphics g, Pen pen, Brush brush)
@@ -84,12 +83,17 @@ namespace Lab5.Shapes
             int x = Math.Min(X1, X2), y = Math.Min(Y1, Y2);
             int w = Math.Abs(X1 - X2), h = Math.Abs(Y1 - Y2);
             int offset = w / 3;
-            g.DrawRectangle(pen, x, y, w, h);
-            g.DrawRectangle(pen, x + offset, y + offset, w, h);
-            g.DrawLine(pen, x, y, x + offset, y + offset);
-            g.DrawLine(pen, x + w, y, x + w + offset, y + offset);
-            g.DrawLine(pen, x, y + h, x + offset, y + h + offset);
-            g.DrawLine(pen, x + w, y + h, x + w + offset, y + h + offset);
+
+            // Грані — поведінка RectShape
+            ((IRectBehavior)this).DrawRectOutline(g, pen, x, y, w, h);
+            ((IRectBehavior)this).DrawRectOutline(g, pen, x + offset, y + offset, w, h);
+
+            // Ребра — поведінка LineShape
+            ILineBehavior line = (ILineBehavior)this;
+            line.DrawLineSeg(g, pen, x, y, x + offset, y + offset);
+            line.DrawLineSeg(g, pen, x + w, y, x + w + offset, y + offset);
+            line.DrawLineSeg(g, pen, x, y + h, x + offset, y + h + offset);
+            line.DrawLineSeg(g, pen, x + w, y + h, x + w + offset, y + h + offset);
         }
         public override string GetName() => "CubeWireframe";
     }

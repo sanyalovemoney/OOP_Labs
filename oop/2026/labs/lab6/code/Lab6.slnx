@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Manager/Manager.csproj" />
+  <Project Path="Object2/Object2.csproj" />
+  <Project Path="Object3/Object3.csproj" />
+</Solution>

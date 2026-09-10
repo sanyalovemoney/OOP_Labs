@@ -51,7 +51,7 @@ namespace Lab1
             lblDisplayText.BringToFront();
         }
 
-        private void OnWork1Clicked(object sender, EventArgs e)
+        private void OnWork1Clicked(object? sender, EventArgs e)
         {
             using (var form = new Module1Form())
             {
@@ -62,7 +62,7 @@ namespace Lab1
             }
         }
 
-        private void OnWork2Clicked(object sender, EventArgs e)
+        private void OnWork2Clicked(object? sender, EventArgs e)
         {
             using (var form = new Module2Form())
             {
@@ -73,7 +73,7 @@ namespace Lab1
             }
         }
 
-        private void OnAboutClicked(object sender, EventArgs e)
+        private void OnAboutClicked(object? sender, EventArgs e)
         {
             MessageBox.Show("Лабораторна робота №1\nСтудент: Мащута Олександр", "Про програму", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }

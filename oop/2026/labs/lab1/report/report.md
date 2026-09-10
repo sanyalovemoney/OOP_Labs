@@ -117,7 +117,7 @@ public class Module1Form : Form
         {
             if (lbGroups.SelectedItem != null)
             {
-                Result = lbGroups.SelectedItem.ToString();
+                Result = lbGroups.SelectedItem?.ToString() ?? "";
                 this.Close();
             }
         };
