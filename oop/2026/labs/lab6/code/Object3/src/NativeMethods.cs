@@ -2,28 +2,29 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace Lab6.Object3
+namespace Lab6.Object3;
+
+internal static class NativeMethods
 {
-    // WM_COPYDATA — прийом команд від Manager (методичка, лаб. №6)
-    internal static class NativeMethods
+    public const int WM_COPYDATA = 0x004A;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct COPYDATASTRUCT
     {
-        public const int WM_COPYDATA = 0x004A;
+        public IntPtr dwData;
+        public int cbData;
+        public IntPtr lpData;
+    }
 
-        [StructLayout(LayoutKind.Sequential)]
-        public struct COPYDATASTRUCT
-        {
-            public IntPtr dwData;
-            public int cbData;
-            public IntPtr lpData;
-        }
+    public static (IntPtr dwData, string text) ParseCopyData(Message m)
+    {
+        if (m.LParam == IntPtr.Zero) return (IntPtr.Zero, string.Empty);
+        var cds = Marshal.PtrToStructure<COPYDATASTRUCT>(m.LParam);
+        if (cds.cbData <= 0 || cds.lpData == IntPtr.Zero)
+            return (cds.dwData, string.Empty);
 
-        public static (IntPtr dwData, string text) ParseCopyData(Message m)
-        {
-            COPYDATASTRUCT cds = Marshal.PtrToStructure<COPYDATASTRUCT>(m.LParam);
-            string text = cds.cbData > 0
-                ? Marshal.PtrToStringUni(cds.lpData, cds.cbData / 2) ?? ""
-                : "";
-            return (cds.dwData, text);
-        }
+        string text = Marshal.PtrToStringUni(cds.lpData, cds.cbData / sizeof(char)) ?? string.Empty;
+        return (cds.dwData, text);
     }
 }
+
