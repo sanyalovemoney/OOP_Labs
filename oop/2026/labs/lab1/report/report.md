@@ -67,31 +67,87 @@
 
 ## Вихідний текст програми
 
-### Головний файл MainWindow.cs (фрагменти)
-
-У головному вікні реалізовано обробку натискань пунктів меню та вивід результату за допомогою `Label`, що розташований по центру форми.
+### Головний файл MainWindow.cs
 
 ```csharp
-// Обробка виклику Роботи 1
-private void OnWork1Clicked(object sender, EventArgs e)
-{
-    using (var form = new Module1Form())
-    {
-        if (form.ShowDialog() == DialogResult.OK)
-        {
-            lblDisplayText.Text = form.Result;
-        }
-    }
-}
+using System;
+using System.Drawing;
+using System.Windows.Forms;
 
-// Обробка виклику Роботи 2
-private void OnWork2Clicked(object sender, EventArgs e)
+namespace Lab1
 {
-    using (var form = new Module2Form())
+    public class MainWindow : Form
     {
-        if (form.ShowDialog() == DialogResult.OK)
+        private MenuStrip menuStrip;
+        private Label lblDisplayText;
+
+        public MainWindow()
         {
-            lblDisplayText.Text = form.Result;
+            this.Text = "Лабораторна робота №1 (C#)";
+            this.Size = new Size(600, 400);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            // Setup Menu
+            menuStrip = new MenuStrip();
+            var menuWorks = new ToolStripMenuItem("Роботи");
+            var menuHelp = new ToolStripMenuItem("Допомога");
+            var menuFile = new ToolStripMenuItem("Файл");
+
+            var itemWork1 = new ToolStripMenuItem("Робота 1", null, OnWork1Clicked);
+            var itemWork2 = new ToolStripMenuItem("Робота 2", null, OnWork2Clicked);
+            menuWorks.DropDownItems.Add(itemWork1);
+            menuWorks.DropDownItems.Add(itemWork2);
+
+            var itemAbout = new ToolStripMenuItem("Про програму...", null, OnAboutClicked);
+            menuHelp.DropDownItems.Add(itemAbout);
+
+            var itemExit = new ToolStripMenuItem("Вихід", null, (s, e) => Application.Exit());
+            menuFile.DropDownItems.Add(itemExit);
+
+            menuStrip.Items.Add(menuFile);
+            menuStrip.Items.Add(menuWorks);
+            menuStrip.Items.Add(menuHelp);
+
+            this.MainMenuStrip = menuStrip;
+            this.Controls.Add(menuStrip);
+
+            // Display Label
+            lblDisplayText = new Label
+            {
+                Text = "Будь ласка, оберіть роботу в меню",
+                TextAlign = ContentAlignment.MiddleCenter,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 12, FontStyle.Regular)
+            };
+            this.Controls.Add(lblDisplayText);
+            lblDisplayText.BringToFront();
+        }
+
+        private void OnWork1Clicked(object? sender, EventArgs e)
+        {
+            using (var form = new Module1Form())
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    lblDisplayText.Text = form.Result;
+                }
+            }
+        }
+
+        private void OnWork2Clicked(object? sender, EventArgs e)
+        {
+            using (var form = new Module2Form())
+            {
+                if (form.ShowDialog() == DialogResult.OK)
+                {
+                    lblDisplayText.Text = form.Result;
+                }
+            }
+        }
+
+        private void OnAboutClicked(object? sender, EventArgs e)
+        {
+            MessageBox.Show("Лабораторна робота №1\nСтудент: Мащута Олександр", "Про програму", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
     }
 }
@@ -99,50 +155,147 @@ private void OnWork2Clicked(object sender, EventArgs e)
 
 ### Модуль 1 (Module1Form.cs)
 
-Модуль реалізує модальне вікно з `ListBox`, який ініціалізується списком груп при створенні форми.
-
 ```csharp
-public class Module1Form : Form
-{
-    private ListBox lbGroups;
-    public string Result { get; private set; } = "";
+using System;
+using System.Drawing;
+using System.Windows.Forms;
 
-    public Module1Form()
+namespace Lab1
+{
+    public class Module1Form : Form
     {
-        // ... ініціалізація елементів ...
-        string[] groups = { "IM-051", "IM-052", "IM-053", "IM-054", "IM-055", "IM-056" };
-        foreach (var group in groups) lbGroups.Items.Add(group);
-        
-        btnOk.Click += (s, e) =>
+        private ListBox lbGroups;
+        private Button btnOk;
+        private Button btnCancel;
+
+        public string Result { get; private set; } = "";
+
+        public Module1Form()
         {
-            if (lbGroups.SelectedItem != null)
+            this.Text = "Робота 1 - Вибір групи";
+            this.Size = new Size(250, 200);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+
+            Label lbl = new Label
             {
-                Result = lbGroups.SelectedItem?.ToString() ?? "";
-                this.Close();
-            }
-        };
+                Text = "Оберіть групу свого факультету:",
+                Location = new Point(10, 10),
+                AutoSize = true
+            };
+
+            lbGroups = new ListBox
+            {
+                Location = new Point(10, 30),
+                Size = new Size(210, 80)
+            };
+
+            string[] groups = { "IM-051", "IM-052", "IM-053", "IM-054", "IM-055", "IM-056" };
+            foreach (var group in groups) lbGroups.Items.Add(group);
+            if (lbGroups.Items.Count > 0) lbGroups.SelectedIndex = 0;
+
+            btnOk = new Button
+            {
+                Text = "Так",
+                Location = new Point(50, 120),
+                DialogResult = DialogResult.OK
+            };
+
+            btnCancel = new Button
+            {
+                Text = "Відміна",
+                Location = new Point(120, 120),
+                DialogResult = DialogResult.Cancel
+            };
+
+            btnOk.Click += (s, e) =>
+            {
+                if (lbGroups.SelectedItem != null)
+                {
+                    Result = lbGroups.SelectedItem?.ToString() ?? "";
+                    this.Close();
+                }
+            };
+
+            this.Controls.Add(lbl);
+            this.Controls.Add(lbGroups);
+            this.Controls.Add(btnOk);
+            this.Controls.Add(btnCancel);
+            this.AcceptButton = btnOk;
+            this.CancelButton = btnCancel;
+        }
     }
 }
 ```
 
 ### Модуль 2 (Module2Form.cs)
 
-Модуль реалізує модальне вікно з `TextBox` для вільного введення тексту користувачем.
-
 ```csharp
-public class Module2Form : Form
-{
-    private TextBox txtInput;
-    public string Result { get; private set; } = "";
+using System;
+using System.Drawing;
+using System.Windows.Forms;
 
-    public Module2Form()
+namespace Lab1
+{
+    public class Module2Form : Form
     {
-        // ... ініціалізація елементів ...
-        btnOk.Click += (s, e) =>
+        private TextBox txtInput;
+        private Button btnOk;
+        private Button btnCancel;
+
+        public string Result { get; private set; } = "";
+
+        public Module2Form()
         {
-            Result = txtInput.Text;
-            this.Close();
-        };
+            this.Text = "Робота 2 - Введення тексту";
+            this.Size = new Size(250, 150);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+
+            Label lbl = new Label
+            {
+                Text = "Введіть текст:",
+                Location = new Point(10, 10),
+                AutoSize = true
+            };
+
+            txtInput = new TextBox
+            {
+                Location = new Point(10, 30),
+                Size = new Size(210, 20)
+            };
+
+            btnOk = new Button
+            {
+                Text = "Так",
+                Location = new Point(50, 70),
+                DialogResult = DialogResult.OK
+            };
+
+            btnCancel = new Button
+            {
+                Text = "Відміна",
+                Location = new Point(120, 70),
+                DialogResult = DialogResult.Cancel
+            };
+
+            btnOk.Click += (s, e) =>
+            {
+                Result = txtInput.Text;
+                this.Close();
+            };
+
+            this.Controls.Add(lbl);
+            this.Controls.Add(txtInput);
+            this.Controls.Add(btnOk);
+            this.Controls.Add(btnCancel);
+            this.AcceptButton = btnOk;
+            this.CancelButton = btnCancel;
+        }
     }
 }
 ```
