@@ -64,7 +64,7 @@
 
 ## Вихідний текст програми
 
-### Головний файл MainWindow.cs (фрагменти)
+### Головний файл MainWindow.cs
 
 ```csharp
 using System;
@@ -118,16 +118,16 @@ namespace Lab3
         private void InitializeToolbar()
         {
             _toolStrip = new ToolStrip();
-            
+
             var btnPoint = new ToolStripButton("Point") { ToolTipText = "Draw a Point" };
             btnPoint.Click += (s, e) => { _currentType = ShapeType.Point; UpdateTitle(); };
-            
+
             var btnLine = new ToolStripButton("Line") { ToolTipText = "Draw a Line" };
             btnLine.Click += (s, e) => { _currentType = ShapeType.Line; UpdateTitle(); };
-            
+
             var btnRect = new ToolStripButton("Rect") { ToolTipText = "Draw a Rectangle" };
             btnRect.Click += (s, e) => { _currentType = ShapeType.Rectangle; UpdateTitle(); };
-            
+
             var btnEllipse = new ToolStripButton("Ellipse") { ToolTipText = "Draw an Ellipse" };
             btnEllipse.Click += (s, e) => { _currentType = ShapeType.Ellipse; UpdateTitle(); };
 
@@ -144,6 +144,7 @@ namespace Lab3
             this.Text = $"Graphic Object Editor - Lab 3 [{_currentType}]";
         }
 
+        // Factory: single place where shapes are created (OCP-friendly)
         private static Shape CreateShape(ShapeType type, Point start, Point end) => type switch
         {
             ShapeType.Point => new PointShape(start.X, start.Y, end.X, end.Y),
@@ -152,6 +153,71 @@ namespace Lab3
             ShapeType.Ellipse => new EllipseShape(start.X, start.Y, end.X, end.Y),
             _ => throw new ArgumentOutOfRangeException(nameof(type))
         };
+
+        // Single place where fill colors are defined
+        private static Brush GetFillBrush(Shape shape) => shape switch
+        {
+            RectShape => Brushes.Orange,
+            EllipseShape => Brushes.White,
+            _ => Brushes.LightGray
+        };
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            if (e.Button == MouseButtons.Left)
+            {
+                _isDrawing = true;
+                _startPoint = e.Location;
+                _currentPoint = e.Location;
+            }
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            if (_isDrawing)
+            {
+                _currentPoint = e.Location;
+                this.Invalidate();
+            }
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            if (_isDrawing && e.Button == MouseButtons.Left)
+            {
+                _isDrawing = false;
+                _shapes.Add(CreateShape(_currentType, _startPoint, e.Location));
+                this.Invalidate();
+            }
+        }
+
+        protected override void OnPaint(PaintEventArgs e)
+        {
+            base.OnPaint(e);
+            Graphics g = e.Graphics;
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            using (Pen pen = new Pen(Color.Black, 1))
+            {
+                foreach (var shape in _shapes)
+                {
+                    shape.Draw(g, pen, GetFillBrush(shape));
+                }
+
+                if (_isDrawing)
+                {
+                    using (Pen rubberPen = new Pen(Color.Gray, 1) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
+                    using (Brush rubberBrush = new SolidBrush(Color.FromArgb(100, Color.LightGray)))
+                    {
+                        Shape rubberShape = CreateShape(_currentType, _startPoint, _currentPoint);
+                        rubberShape.Draw(g, rubberPen, rubberBrush);
+                    }
+                }
+            }
+        }
     }
 }
 ```
@@ -225,20 +291,6 @@ Lab3
 ### Головне вікно з панеллю інструментів (Toolbar)
 <img src="../screenshots/main_window.png" style="width: 100%; max-width: 800px;">
 _Рис. 1. Панель інструментів ToolStrip з кнопками швидкого доступу_
-
----
-
-### Відображення підказок (Tooltips)
-<img src="../screenshots/toolbar_tooltip.png" style="width: 100%; max-width: 800px;">
-_Рис. 2. Спливаюча підказка ToolTipText при наведенні курсору на кнопку Toolbar_
-
----
-
-### Малювання прямокутника через Toolbar
-<img src="../screenshots/draw_rect_toolbar.png" style="width: 100%; max-width: 800px;">
-_Рис. 3. Малювання об'єкта після вибору інструмента на Toolbar_
-
----
 
 ## Висновки
 
