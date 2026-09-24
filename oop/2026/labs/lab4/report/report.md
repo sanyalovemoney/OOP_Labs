@@ -96,6 +96,7 @@ namespace Lab4
             }
         }
 
+        // Single place where fill colors are defined
         private static Brush GetFillBrush(Shape shape) => shape switch
         {
             RectShape => Brushes.Orange,
@@ -121,19 +122,35 @@ using System.Drawing;
 
 namespace Lab4.Shapes
 {
+    // C# не підтримує множинне успадкування КЛАСІВ, тому вимога методички
+    // (LineOOShape : LineShape, EllipseShape та CubeShape : LineShape, RectShape)
+    // реалізована через інтерфейси з default-реалізаціями (C# 8+).
+    // Кожен інтерфейс несе поведінку малювання "свого" класу, а складена фігура
+    // реалізує ДЕКІЛЬКА інтерфейсів одночасно — це C#-аналог множинного
+    // успадкування: методи успадковуються від кількох базових типів.
+
+    /// <summary>Поведінка LineShape: малювання відрізків прямих.</summary>
     public interface ILineBehavior
     {
-        int X1 { get; } int Y1 { get; } int X2 { get; } int Y2 { get; }
+        int X1 { get; }
+        int Y1 { get; }
+        int X2 { get; }
+        int Y2 { get; }
 
+        // Default-реалізація — успадковується кожним класом, що має ці координати
         void DrawLine(Graphics g, Pen pen) => g.DrawLine(pen, X1, Y1, X2, Y2);
 
         void DrawLineSeg(Graphics g, Pen pen, int x1, int y1, int x2, int y2)
             => g.DrawLine(pen, x1, y1, x2, y2);
     }
 
+    /// <summary>Поведінка EllipseShape: малювання еліпсів та кіл.</summary>
     public interface IEllipseBehavior
     {
-        int X1 { get; } int Y1 { get; } int X2 { get; } int Y2 { get; }
+        int X1 { get; }
+        int Y1 { get; }
+        int X2 { get; }
+        int Y2 { get; }
 
         void DrawEllipseFilled(Graphics g, Pen pen, Brush brush)
         {
@@ -147,9 +164,13 @@ namespace Lab4.Shapes
             => g.FillEllipse(brush, cx - r, cy - r, 2 * r, 2 * r);
     }
 
+    /// <summary>Поведінка RectShape: малювання прямокутників.</summary>
     public interface IRectBehavior
     {
-        int X1 { get; } int Y1 { get; } int X2 { get; } int Y2 { get; }
+        int X1 { get; }
+        int Y1 { get; }
+        int X2 { get; }
+        int Y2 { get; }
 
         void DrawRectFilled(Graphics g, Pen pen, Brush brush)
         {
@@ -173,20 +194,30 @@ using System.Drawing;
 
 namespace Lab4.Shapes
 {
-    // Еквівалент C++: class LineOOShape : public LineShape, public EllipseShape
+    // "Множинне успадкування" в C#: клас успадковує Shape і одночасно
+    // реалізує ІНТЕРФЕЙСИ ДВОХ базових поведінок (LineShape + EllipseShape),
+    // отримуючи готові методи малювання з обох (default interface methods).
+    // Це еквівалент C++-оголошення:
+    //   class LineOOShape : public LineShape, public EllipseShape { ... };
+
     public class LineWithCirclesShape : Shape, ILineBehavior, IEllipseBehavior
     {
         public LineWithCirclesShape(int x1, int y1, int x2, int y2) : base(x1, y1, x2, y2) { }
 
         public override void Draw(Graphics g, Pen pen, Brush brush)
         {
+            // Лінія — поведінка LineShape
             ((ILineBehavior)this).DrawLine(g, pen);
+
+            // Кружечки на кінцях — поведінка EllipseShape
             ((IEllipseBehavior)this).DrawCircle(g, brush, X1, Y1, 3);
             ((IEllipseBehavior)this).DrawCircle(g, brush, X2, Y2, 3);
         }
     }
 
-    // Еквівалент C++: class CubeShape : public LineShape, public RectShape
+    // Еквівалент C++-оголошення:
+    //   class CubeShape : public LineShape, public RectShape { ... };
+
     public class CubeWireframeShape : Shape, ILineBehavior, IRectBehavior
     {
         public CubeWireframeShape(int x1, int y1, int x2, int y2) : base(x1, y1, x2, y2) { }
@@ -197,9 +228,11 @@ namespace Lab4.Shapes
             int w = Math.Abs(X1 - X2), h = Math.Abs(Y1 - Y2);
             int offset = w / 3;
 
+            // Передня та задня грані — поведінка RectShape
             ((IRectBehavior)this).DrawRectOutline(g, pen, x, y, w, h);
             ((IRectBehavior)this).DrawRectOutline(g, pen, x + offset, y + offset, w, h);
 
+            // З'єднувальні ребра — поведінка LineShape
             ILineBehavior line = (ILineBehavior)this;
             line.DrawLineSeg(g, pen, x, y, x + offset, y + offset);
             line.DrawLineSeg(g, pen, x + w, y, x + w + offset, y + offset);
